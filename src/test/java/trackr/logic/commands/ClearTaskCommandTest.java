@@ -7,9 +7,10 @@ import static trackr.testutil.TypicalTasks.getTypicalTaskList;
 
 import org.junit.jupiter.api.Test;
 
+import trackr.logic.commands.task.ClearTaskCommand;
 import trackr.model.Model;
+import trackr.model.ModelEnum;
 import trackr.model.ModelManager;
-import trackr.model.TaskList;
 import trackr.model.UserPrefs;
 
 public class ClearTaskCommandTest {
@@ -19,7 +20,10 @@ public class ClearTaskCommandTest {
         Model model = new ModelManager();
         Model expectedModel = new ModelManager();
 
-        assertCommandSuccess(new ClearTaskCommand(), model, ClearTaskCommand.MESSAGE_SUCCESS, expectedModel);
+        assertCommandSuccess(new ClearTaskCommand(),
+                model,
+                String.format(ClearTaskCommand.MESSAGE_SUCCESS, ModelEnum.TASK),
+                expectedModel);
     }
 
     @Test
@@ -28,9 +32,12 @@ public class ClearTaskCommandTest {
                 getTypicalOrderList(), new UserPrefs());
         Model expectedModel = new ModelManager(getTypicalSupplierList(), getTypicalTaskList(),
                 getTypicalOrderList(), new UserPrefs());
-        expectedModel.setTaskList(new TaskList());
+        expectedModel.setItemList(ModelEnum.TASK);
 
-        assertCommandSuccess(new ClearTaskCommand(), model, ClearTaskCommand.MESSAGE_SUCCESS, expectedModel);
+        assertCommandSuccess(new ClearTaskCommand(),
+                model,
+                String.format(ClearTaskCommand.MESSAGE_SUCCESS, ModelEnum.TASK),
+                expectedModel);
     }
 
 }

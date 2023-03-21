@@ -11,6 +11,8 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import trackr.commons.core.GuiSettings;
 import trackr.commons.core.LogsCenter;
+import trackr.model.item.Item;
+import trackr.model.item.ReadOnlyItemList;
 import trackr.model.order.Order;
 import trackr.model.person.Supplier;
 import trackr.model.task.Task;
@@ -33,7 +35,7 @@ public class ModelManager implements Model {
      * Initializes a ModelManager with the given supplier list, taskList and userPrefs.
      */
     public ModelManager(ReadOnlySupplierList supplierList, ReadOnlyTaskList taskList,
-            ReadOnlyOrderList orderList, ReadOnlyUserPrefs userPrefs) {
+                        ReadOnlyOrderList orderList, ReadOnlyUserPrefs userPrefs) {
         requireAllNonNull(supplierList, taskList, orderList, userPrefs);
 
         logger.fine("Initializing with supplier list: " + supplierList
@@ -47,7 +49,7 @@ public class ModelManager implements Model {
         this.userPrefs = new UserPrefs(userPrefs);
         filteredSuppliers = new FilteredList<>(this.supplierList.getItemList());
         filteredTasks = new FilteredList<>(this.taskList.getItemList());
-        filteredOrders = new FilteredList<>(this.orderList.getOrderList());
+        filteredOrders = new FilteredList<>(this.orderList.getItemList());
     }
 
     public ModelManager() {
@@ -89,40 +91,155 @@ public class ModelManager implements Model {
         userPrefs.setTrackrFilePath(trackrFilePath);
     }
 
-    //=========== AddressBook - Supplier ==============================================================================
+    // =================================================== Item =======================================================
 
     @Override
-    public void setSupplierList(ReadOnlySupplierList supplierList) {
-        this.supplierList.resetData(supplierList);
+    public <T extends Item> void setItemList(ModelEnum modelEnum) {
+        switch (modelEnum) {
+        case SUPPLIER:
+            this.supplierList.resetData(supplierList);
+            break;
+        case TASK:
+            this.taskList.resetData(taskList);
+            break;
+        case ORDER:
+            this.orderList.resetData(orderList);
+            break;
+        case CUSTOMER:
+        default:
+            break;
+        }
     }
+
+    @Override
+    public ReadOnlyItemList<? extends Item> getItemList(ModelEnum modelEnum) {
+        switch (modelEnum) {
+        case SUPPLIER:
+            return supplierList;
+        case TASK:
+            return taskList;
+        case ORDER:
+            return orderList;
+        case CUSTOMER:
+        default:
+            return null;
+        }
+    }
+
+    @Override
+    public <T extends Item> boolean hasItem(T item, ModelEnum modelEnum) {
+        requireNonNull(item);
+        switch (modelEnum) {
+        case SUPPLIER:
+            return supplierList.hasItem((Supplier) item);
+        case TASK:
+            return taskList.hasItem((Task) item);
+        case ORDER:
+            return orderList.hasItem((Order) item);
+        case CUSTOMER:
+        default:
+            return false;
+        }
+    }
+
+    @Override
+    public <T extends Item> void deleteItem(T item, ModelEnum modelEnum) {
+        switch (modelEnum) {
+        case SUPPLIER:
+            supplierList.removeItem((Supplier) item);
+            break;
+        case TASK:
+            taskList.removeItem((Task) item);
+            break;
+        case ORDER:
+            orderList.removeItem((Order) item);
+            break;
+        case CUSTOMER:
+        default:
+            break;
+        }
+    }
+
+    @Override
+    public <T extends Item> void addItem(T item, ModelEnum modelEnum) {
+        switch (modelEnum) {
+        case SUPPLIER:
+            supplierList.addItem((Supplier) item);
+            updateFilteredItemList(PREDICATE_SHOW_ALL_ITEMS, modelEnum);
+            break;
+        case TASK:
+            taskList.addItem((Task) item);
+            updateFilteredItemList(PREDICATE_SHOW_ALL_ITEMS, modelEnum);
+            break;
+        case ORDER:
+            orderList.addItem((Order) item);
+            updateFilteredItemList(PREDICATE_SHOW_ALL_ITEMS, modelEnum);
+            break;
+        case CUSTOMER:
+        default:
+            break;
+        }
+    }
+
+    @Override
+    public <T extends Item> void setItem(T item, T itemEdited, ModelEnum modelEnum) {
+        requireAllNonNull(item, itemEdited);
+        switch (modelEnum) {
+        case SUPPLIER:
+            supplierList.setItem((Supplier) item, (Supplier) itemEdited);
+            break;
+        case TASK:
+            taskList.setItem((Task) item, (Task) itemEdited);
+            break;
+        case ORDER:
+            orderList.setItem((Order) item, (Order) itemEdited);
+            break;
+        case CUSTOMER:
+        default:
+            break;
+        }
+    }
+
+    @Override
+    public FilteredList<? extends Item> getFilteredItemList(ModelEnum modelEnum) {
+        switch (modelEnum) {
+        case SUPPLIER:
+            return filteredSuppliers;
+        case TASK:
+            return filteredTasks;
+        case ORDER:
+            return filteredOrders;
+        case CUSTOMER:
+        default:
+            return null;
+        }
+    }
+
+    @Override
+    public void updateFilteredItemList(Predicate<Item> predicate, ModelEnum modelEnum) {
+        requireNonNull(predicate);
+        switch (modelEnum) {
+        case SUPPLIER:
+            filteredSuppliers.setPredicate(predicate);
+            break;
+        case TASK:
+            filteredTasks.setPredicate(predicate);
+            break;
+        case ORDER:
+            filteredOrders.setPredicate(predicate);
+            break;
+        case CUSTOMER:
+        default:
+            break;
+        }
+    }
+
+
+    //=========== AddressBook - Supplier ==============================================================================
 
     @Override
     public ReadOnlySupplierList getSupplierList() {
         return supplierList;
-    }
-
-    @Override
-    public boolean hasSupplier(Supplier supplier) {
-        requireNonNull(supplier);
-        return supplierList.hasItem(supplier);
-    }
-
-    @Override
-    public void deleteSupplier(Supplier target) {
-        supplierList.removeItem(target);
-    }
-
-    @Override
-    public void addSupplier(Supplier supplier) {
-        supplierList.addItem(supplier);
-        updateFilteredSupplierList(PREDICATE_SHOW_ALL_PERSONS);
-    }
-
-    @Override
-    public void setSupplier(Supplier target, Supplier editedSupplier) {
-        requireAllNonNull(target, editedSupplier);
-
-        supplierList.setItem(target, editedSupplier);
     }
 
     //=========== Filtered Supplier List Accessors =============================================================
@@ -136,46 +253,11 @@ public class ModelManager implements Model {
         return filteredSuppliers;
     }
 
-    @Override
-    public void updateFilteredSupplierList(Predicate<Supplier> predicate) {
-        requireNonNull(predicate);
-        filteredSuppliers.setPredicate(predicate);
-    }
-
     //=========== TaskList ===================================================================================
-
-    @Override
-    public void setTaskList(ReadOnlyTaskList taskList) {
-        this.taskList.resetData(taskList);
-    }
 
     @Override
     public ReadOnlyTaskList getTaskList() {
         return taskList;
-    }
-
-    @Override
-    public boolean hasTask(Task task) {
-        requireNonNull(task);
-        return taskList.hasItem(task);
-    }
-
-    @Override
-    public void deleteTask(Task target) {
-        taskList.removeItem(target);
-    }
-
-    @Override
-    public void addTask(Task task) {
-        taskList.addItem(task);
-        updateFilteredTaskList(PREDICATE_SHOW_ALL_TASKS);
-    }
-
-    @Override
-    public void setTask(Task target, Task editedTask) {
-        requireAllNonNull(target, editedTask);
-
-        taskList.setItem(target, editedTask);
     }
 
     //=========== Filtered Task List Accessors ===============================================================
@@ -189,46 +271,11 @@ public class ModelManager implements Model {
         return filteredTasks;
     }
 
-    @Override
-    public void updateFilteredTaskList(Predicate<Task> predicate) {
-        requireNonNull(predicate);
-        filteredTasks.setPredicate(predicate);
-    }
-
     //=========== OrderList ===================================================================================
-
-    @Override
-    public void setOrderList(ReadOnlyOrderList orderList) {
-        this.orderList.resetData(orderList);
-    }
 
     @Override
     public ReadOnlyOrderList getOrderList() {
         return orderList;
-    }
-
-    @Override
-    public boolean hasOrder(Order order) {
-        requireNonNull(order);
-        return orderList.hasOrder(order);
-    }
-
-    @Override
-    public void deleteOrder(Order target) {
-        orderList.removeOrder(target);
-    }
-
-    @Override
-    public void addOrder(Order order) {
-        orderList.addOrder(order);
-        updateFilteredOrderList(PREDICATE_SHOW_ALL_ORDERS);
-    }
-
-    @Override
-    public void setOrder(Order target, Order editedOrder) {
-        requireAllNonNull(target, editedOrder);
-
-        orderList.setOrder(target, editedOrder);
     }
 
     //=========== Filtered Order List Accessors =============================================================
@@ -240,12 +287,6 @@ public class ModelManager implements Model {
     @Override
     public ObservableList<Order> getFilteredOrderList() {
         return filteredOrders;
-    }
-
-    @Override
-    public void updateFilteredOrderList(Predicate<Order> predicate) {
-        requireNonNull(predicate);
-        filteredOrders.setPredicate(predicate);
     }
 
     //========================================================================================================

@@ -12,8 +12,11 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 import trackr.logic.commands.exceptions.CommandException;
+import trackr.logic.commands.task.AddTaskCommand;
+import trackr.model.ModelEnum;
 import trackr.model.ReadOnlyTaskList;
 import trackr.model.TaskList;
+import trackr.model.item.Item;
 import trackr.model.task.Task;
 import trackr.testutil.TaskBuilder;
 import trackr.testutil.TestUtil.ModelStub;
@@ -32,7 +35,7 @@ public class AddTaskCommandTest {
 
         CommandResult commandResult = new AddTaskCommand(validTask).execute(modelStub);
 
-        assertEquals(String.format(AddTaskCommand.MESSAGE_SUCCESS, validTask),
+        assertEquals(String.format(AddTaskCommand.MESSAGE_SUCCESS, ModelEnum.TASK, validTask),
                 commandResult.getFeedbackToUser());
         assertEquals(Arrays.asList(validTask), modelStub.tasksAdded);
     }
@@ -44,7 +47,8 @@ public class AddTaskCommandTest {
         ModelStub modelStub = new AddTaskCommandTest.ModelStubWithTask(validTask);
 
         assertThrows(CommandException.class,
-                AddTaskCommand.MESSAGE_DUPLICATE_TASK, () -> addTaskCommand.execute(modelStub));
+                String.format(AddTaskCommand.MESSAGE_DUPLICATE_ITEM, ModelEnum.TASK,
+                        ModelEnum.TASK), () -> addTaskCommand.execute(modelStub));
     }
 
     @Test
@@ -83,9 +87,9 @@ public class AddTaskCommandTest {
         }
 
         @Override
-        public boolean hasTask(Task task) {
-            requireNonNull(task);
-            return this.task.isSameItem(task);
+        public <T extends Item> boolean hasItem(T item, ModelEnum modelEnum) {
+            requireNonNull(item);
+            return this.task.isSameItem((Task) item);
         }
     }
 
@@ -96,15 +100,15 @@ public class AddTaskCommandTest {
         final ArrayList<Task> tasksAdded = new ArrayList<>();
 
         @Override
-        public boolean hasTask(Task task) {
-            requireNonNull(task);
-            return tasksAdded.stream().anyMatch(task::isSameItem);
+        public <T extends Item> boolean hasItem(T item, ModelEnum modelEnum) {
+            requireNonNull(item);
+            return tasksAdded.stream().anyMatch(item::isSameItem);
         }
 
         @Override
-        public void addTask(Task task) {
-            requireNonNull(task);
-            tasksAdded.add(task);
+        public <T extends Item> void addItem(T item, ModelEnum modelEnum) {
+            requireNonNull(item);
+            tasksAdded.add((Task) item);
         }
 
         @Override

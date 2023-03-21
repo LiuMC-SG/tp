@@ -12,8 +12,11 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 import trackr.logic.commands.exceptions.CommandException;
+import trackr.logic.commands.supplier.AddSupplierCommand;
+import trackr.model.ModelEnum;
 import trackr.model.ReadOnlySupplierList;
 import trackr.model.SupplierList;
+import trackr.model.item.Item;
 import trackr.model.person.Supplier;
 import trackr.testutil.SupplierBuilder;
 import trackr.testutil.TestUtil.ModelStub;
@@ -32,7 +35,7 @@ public class AddSupplierCommandTest {
 
         CommandResult commandResult = new AddSupplierCommand(validSupplier).execute(modelStub);
 
-        assertEquals(String.format(AddSupplierCommand.MESSAGE_SUCCESS, validSupplier),
+        assertEquals(String.format(AddSupplierCommand.MESSAGE_SUCCESS, ModelEnum.SUPPLIER, validSupplier),
                 commandResult.getFeedbackToUser());
         assertEquals(Arrays.asList(validSupplier), modelStub.suppliersAdded);
     }
@@ -44,7 +47,8 @@ public class AddSupplierCommandTest {
         ModelStub modelStub = new ModelStubWithSupplier(validSupplier);
 
         assertThrows(CommandException.class,
-                AddSupplierCommand.MESSAGE_DUPLICATE_SUPPLIER, () -> addSupplierCommand.execute(modelStub));
+                String.format(AddSupplierCommand.MESSAGE_DUPLICATE_ITEM,
+                        ModelEnum.SUPPLIER, ModelEnum.SUPPLIER), () -> addSupplierCommand.execute(modelStub));
     }
 
     @Test
@@ -83,9 +87,9 @@ public class AddSupplierCommandTest {
         }
 
         @Override
-        public boolean hasSupplier(Supplier supplier) {
-            requireNonNull(supplier);
-            return this.supplier.isSameItem(supplier);
+        public <T extends Item> boolean hasItem(T item, ModelEnum modelEnum) {
+            requireNonNull(item);
+            return this.supplier.isSameItem((Supplier) item);
         }
     }
 
@@ -96,15 +100,15 @@ public class AddSupplierCommandTest {
         final ArrayList<Supplier> suppliersAdded = new ArrayList<>();
 
         @Override
-        public boolean hasSupplier(Supplier supplier) {
-            requireNonNull(supplier);
-            return suppliersAdded.stream().anyMatch(supplier::isSameItem);
+        public <T extends Item> boolean hasItem(T item, ModelEnum modelEnum) {
+            requireNonNull(item);
+            return suppliersAdded.stream().anyMatch(item::isSameItem);
         }
 
         @Override
-        public void addSupplier(Supplier supplier) {
-            requireNonNull(supplier);
-            suppliersAdded.add(supplier);
+        public <T extends Item> void addItem(T item, ModelEnum modelEnum) {
+            requireNonNull(item);
+            suppliersAdded.add((Supplier) item);
         }
 
         @Override
