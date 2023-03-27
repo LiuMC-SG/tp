@@ -134,7 +134,7 @@ The `UI` component,
 Here's a (partial) class diagram of the `Logic` component:
 
 <p align="center">
-  <img src="images/LogicClassDiagram.png" width="550"/>
+  <img src="images/LogicClassDiagram.svg" width="550"/>
 </p>
 
 How the `Logic` component works:
@@ -153,7 +153,7 @@ The Sequence Diagram below illustrates the interactions within the `Logic` compo
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
 <p align="center">
-  <img src="images/ParserClasses.png" width="600"/>
+  <img src="images/ParserClasses.svg" width="600"/>
 </p>
 
 How the parsing works:
